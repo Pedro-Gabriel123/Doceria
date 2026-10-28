@@ -1,0 +1,260 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Doceria 🍓</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#fff7f5;color:#50343b}
+header{background:#f7c5d2;padding:24px;text-align:center}
+header h1{margin:0;font-family:Georgia,serif;font-size:32px}
+header p{margin-bottom:0}
+nav{padding:15px;display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
+button{cursor:pointer;border:0;border-radius:12px;padding:11px 15px;
+background:#d94f7b;color:white;font-weight:bold;transition:.2s}
+button:hover{transform:translateY(-2px);filter:brightness(.95)}
+main{max-width:1100px;margin:auto;padding:15px;
+display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:20px}
+.card{background:white;border-radius:18px;overflow:hidden;
+box-shadow:0 5px 18px #6c324510;transition:.2s}
+.card:hover{transform:translateY(-4px)}
+.card img{width:100%;height:180px;object-fit:cover}
+.info{padding:16px}
+.info h3{margin:0 0 8px}
+.info p{color:#947780;min-height:34px;font-size:14px}
+.preco{font-size:21px;color:#d94f7b;font-weight:bold;margin:12px 0}
+.add{width:100%}
+.topo-carrinho{position:fixed;right:20px;bottom:20px;z-index:5;
+border-radius:50px;padding:16px 20px;box-shadow:0 5px 20px #b6426850}
+#contador{background:white;color:#d94f7b;border-radius:50%;padding:4px 8px;margin-left:5px}
+.fundo{position:fixed;inset:0;background:#32151c80;z-index:10;
+opacity:0;visibility:hidden;transition:.25s}
+.fundo.aberto{opacity:1;visibility:visible}
+.painel{position:absolute;right:0;top:0;height:100%;width:min(420px,100%);
+background:#fff9f7;padding:22px;overflow:auto;transform:translateX(100%);
+transition:.3s}
+.aberto .painel{transform:translateX(0)}
+.cabecalho{display:flex;align-items:center;justify-content:space-between;
+border-bottom:1px solid #f0dce1;padding-bottom:14px}
+.fechar{background:#f7dce4;color:#74364b;font-size:20px}
+.produto-carrinho{display:grid;grid-template-columns:65px 1fr;gap:12px;
+padding:16px 0;border-bottom:1px solid #f0dce1}
+.produto-carrinho img{width:65px;height:65px;object-fit:cover;border-radius:12px}
+.produto-carrinho h4{margin:2px 0 8px}
+.controles{display:flex;align-items:center;gap:10px;margin-top:8px}
+.controles button{padding:5px 10px;background:#f4d6df;color:#71354a}
+.resumo{background:white;padding:16px;border-radius:14px;margin-top:18px}
+.linha{display:flex;justify-content:space-between;margin:12px 0}
+.total{font-size:22px;font-weight:bold;color:#d94f7b}
+.vazio{text-align:center;padding:45px 10px;color:#957982}
+.vazio span{font-size:55px;display:block;margin-bottom:15px}
+#toast{position:fixed;bottom:90px;left:50%;transform:translate(-50%,20px);
+background:#51353c;color:white;padding:14px 20px;border-radius:14px;
+opacity:0;pointer-events:none;transition:.25s;z-index:30;
+width:max-content;max-width:90%;text-align:center}
+#toast.mostrar{opacity:1;transform:translate(-50%,0)}
+input{padding:12px;border:1px solid #ead4dc;border-radius:10px;width:100%;margin-top:10px}
+@media(max-width:500px){header h1{font-size:27px}.card img{height:155px}
+main{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;padding:12px}
+.info{padding:12px}.info h3{font-size:16px}.info p{font-size:12px}
+.add{padding:10px 5px;font-size:12px}.preco{font-size:17px}}
+</style>
+</head>
+<body>
+
+<header>
+<h1>🍓 Açúcar & Afeto</h1>
+<p>Igor Nathan não é bem vindo!!</p>
+</header>
+
+<nav>
+  <button onclick="filtrar('Todos')">🍓 Todos</button>
+  <button onclick="filtrar('Bolos')">🎂 Bolos</button>
+  <button onclick="filtrar('Doces')">🍫 Doces</button>
+  <button onclick="filtrar('Tortas')">🥧 Tortas</button>
+  <button onclick="filtrar('Bebidas')">🥤 Bebidas</button>
+</nav>
+
+<main id="produtos"></main>
+
+<button class="topo-carrinho" onclick="abrirCarrinho()">
+🛒 Meu carrinho <span id="contador">0</span>
+</button>
+
+<div class="fundo" id="fundo" onclick="cliqueFundo(event)">
+<aside class="painel">
+<div class="cabecalho">
+<h2>🛍️ Minha sacolinha</h2>
+<button class="fechar" onclick="fecharCarrinho()">×</button>
+</div>
+<div id="lista"></div>
+<div id="resumo"></div>
+</aside>
+</div>
+
+<div id="toast"></div>
+
+<script>
+const whatsapp = "5581992962331";
+
+const doces = [
+{id:1,n:"Bolo de Chocolate",p:18,c:"Bolos",i:"photo-1578985545062-69928b1d9587",d:"Bolo de chocolate com cobertura cremosa."},
+{id:2,n:"Red Velvet",p:22,c:"Bolos",i:"photo-1586788680434-30d324b2d46f",d:"Massa vermelha com recheio de cream cheese."},
+{id:3,n:"Bolo de Morango",p:20,c:"Bolos",i:"photo-1563729784474-d77dbb933a9e",d:"Massa macia, chantilly e morangos."},
+{id:5,n:"Bolo de Ninho",p:24,c:"Bolos",i:"photo-1464349095431-e9a21285b5f3",d:"Recheio de leite em pó e brigadeiro branco."},
+{id:6,n:"Cupcake de Baunilha",p:9,c:"Bolos",i:"photo-1486427944299-d1955d23e34d",d:"Massa leve com cobertura de baunilha."},
+{id:7,n:"Brownie Tradicional",p:10,c:"Doces",i:"photo-1606313564200-e75d5e30476c",d:"Chocolate intenso e casquinha crocante."},
+{id:8,n:"Brownie com Doce de Leite",p:13,c:"Doces",i:"photo-1564355808539-22fda35bed7e",d:"Brownie recheado com doce de leite."},
+{id:9,n:"Brigadeiro Gourmet",p:4,c:"Doces",i:"photo-1581798459219-318e76aecc7b",d:"Brigadeiro coberto com granulado."},
+{id:10,n:"Beijinho de Coco",p:4,c:"Doces",i:"photo-1488477181946-6428a0291777",d:"Doce de coco com acabamento delicado."},
+{id:13,n:"Cookie com Chocolate",p:8,c:"Doces",i:"photo-1499636136210-6f4ee915583e",d:"Cookie amanteigado com gotas de chocolate."},
+{id:14,n:"Donuts com Cobertura",p:9,c:"Doces",i:"photo-1551024506-0bccd828d307",d:"Donuts fofinhos com cobertura açucarada."},
+{id:15,n:"Cheesecake de Frutas",p:16,c:"Tortas",i:"photo-1533134242443-d4fd215305ad",d:"Cheesecake cremoso com cobertura de frutas."},
+{id:16,n:"Torta de Limão",p:14,c:"Tortas",i:"photo-1519915028121-7d3463d20b13",d:"Creme de limão com base crocante."},
+{id:17,n:"Torta de Morango",p:17,c:"Tortas",i:"photo-1464349095431-e9a21285b5f3",d:"Creme de confeiteiro e morangos frescos."},
+{id:18,n:"Banoffee",p:15,c:"Tortas",i:"photo-1488477181946-6428a0291777",d:"Banana, doce de leite e chantilly."},
+{id:19,n:"Milkshake de Chocolate",p:14,c:"Bebidas",i:"photo-1572490122747-3968b75cc699",d:"Milkshake gelado e cremoso."},
+{id:21,n:"Café com Leite",p:7,c:"Bebidas",i:"photo-1461023058943-07fcbe16d735",d:"Café preparado com leite cremoso."},
+];
+
+let carrinho={};
+let cupom=false;
+let timer;
+
+const dinheiro=n=>n.toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
+
+function mostrar(lista=doces){
+document.getElementById("produtos").innerHTML=lista.map(d=>`
+<article class="card">
+<img loading="lazy" src="https://images.unsplash.com/${d.i}?auto=format&fit=crop&w=500&q=70" alt="${d.n}" onerror="this.src='https://placehold.co/500x300/ffe6ee/9b4563?text=Doce'">
+<div class="info">
+<h3>${d.n}</h3><p>${d.d}</p>
+<div class="preco">${dinheiro(d.p)}</div>
+<button class="add" onclick="adicionar(${d.id})">＋ Adicionar ao carrinho</button>
+</div></article>`).join("");
+}
+
+function filtrar(cat){
+mostrar(cat==="Todos"?doces:doces.filter(d=>d.c===cat));
+}
+
+function adicionar(id){
+carrinho[id]=(carrinho[id]||0)+1;
+atualizar();
+notificar("💖 Adicionado à sua sacolinha!");
+}
+
+function quantidade(id,delta){
+carrinho[id]=(carrinho[id]||0)+delta;
+if(carrinho[id]<=0)delete carrinho[id];
+atualizar();
+}
+
+function subtotal(){
+return Object.entries(carrinho).reduce((s,[id,q])=>
+s+doces.find(d=>d.id===Number(id)).p*q,0);
+}
+
+function atualizar(){
+const qtd=Object.values(carrinho).reduce((s,q)=>s+q,0);
+document.getElementById("contador").textContent=qtd;
+
+const itens=Object.entries(carrinho);
+document.getElementById("lista").innerHTML=itens.length?
+itens.map(([id,q])=>{
+const d=doces.find(x=>x.id===Number(id));
+return `<div class="produto-carrinho">
+<img src="https://images.unsplash.com/${d.i}?auto=format&fit=crop&w=150&q=60" alt="${d.n}">
+<div><h4>${d.n}</h4><strong>${dinheiro(d.p*q)}</strong>
+<div class="controles">
+<button onclick="quantidade(${id},-1)">−</button>
+<span>${q}</span>
+<button onclick="quantidade(${id},1)">＋</button>
+<button onclick="quantidade(${id},-${q})">🗑️</button>
+</div></div></div>`;
+}).join(""):`<div class="vazio"><span>🧁</span>
+<h3>Sua sacolinha está vazia</h3><p>Que tal escolher um docinho?</p></div>`;
+
+const sub=subtotal(),desc=cupom?sub*.1:0;
+document.getElementById("resumo").innerHTML=itens.length?`
+<div class="resumo">
+<div class="linha"><span>Subtotal</span><span>${dinheiro(sub)}</span></div>
+<div class="linha"><span>Desconto</span><span>− ${dinheiro(desc)}</span></div>
+<input id="codigo" placeholder="Cupom DOCE10">
+<button style="width:100%;margin-top:8px" onclick="aplicarCupom()">Aplicar cupom</button>
+<div class="linha total"><span>Total</span><span>${dinheiro(sub-desc)}</span></div>
+<button style="width:100%;padding:14px" onclick="finalizar()">Finalizar pedido 💗</button>
+</div>`:"";
+}
+
+function abrirCarrinho(){
+atualizar();
+document.getElementById("fundo").classList.add("aberto");
+document.body.style.overflow="hidden";
+}
+function fecharCarrinho(){
+document.getElementById("fundo").classList.remove("aberto");
+document.body.style.overflow="";
+}
+function cliqueFundo(e){if(e.target.id==="fundo")fecharCarrinho()}
+
+function aplicarCupom(){
+const input=document.getElementById("codigo");
+if(input&&input.value.trim().toUpperCase()==="DOCE10"){
+cupom=true;atualizar();notificar("🎉 Desconto de 10% aplicado!");
+}else{
+cupom=false;atualizar();notificar("Cupom inválido. Tente DOCE10.");
+}
+}
+
+
+function finalizar(){
+  if(!Object.keys(carrinho).length){
+    alert("Seu carrinho está vazio!");
+    return;
+  }
+
+  const itens = Object.entries(carrinho).map(([id,q])=>{
+    const d = doces.find(x=>x.id===Number(id));
+    return `• ${d.n} x${q} — ${dinheiro(d.p*q)}`;
+  }).join("\n");
+
+  const sub = subtotal();
+  const desc = cupom ? sub * 0.1 : 0;
+  const total = sub - desc;
+
+  const mensagem =
+`🍓 *NOVO PEDIDO - DOCE ENCANTO*
+
+Olá! Gostaria de fazer este pedido:
+
+${itens}
+
+Subtotal: ${dinheiro(sub)}
+Desconto: ${dinheiro(desc)}
+*TOTAL: ${dinheiro(total)}*
+
+Aguardo a confirmação! 💗`;
+
+  const url = "https://wa.me/5581992962331?text="
+              + encodeURIComponent(mensagem);
+
+  window.open(url, "_blank");
+}
+
+
+function notificar(texto){
+const t=document.getElementById("toast");
+t.textContent=texto;t.classList.add("mostrar");
+clearTimeout(timer);
+timer=setTimeout(()=>t.classList.remove("mostrar"),1800);
+}
+
+document.addEventListener("keydown",e=>{if(e.key==="Escape")fecharCarrinho()});
+mostrar();
+atualizar();
+</script>
+</body>
+</html>
